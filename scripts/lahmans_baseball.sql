@@ -56,7 +56,22 @@ WHERE yearid = 2016
 GROUP BY position_group
 
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
-   
+
+SELECT LEFT(CAST(yearid AS varchar), 3) AS decade,
+ROUND(AVG(so/g)*10,2) AS so_per_game
+FROM pitching AS p
+WHERE CAST(LEFT(CAST(yearid AS varchar), 3) AS int) >= 192
+GROUP BY decade
+ORDER BY decade
+
+SELECT LEFT(CAST(yearid AS varchar), 3) AS decade,
+ROUND(AVG(hr/g)*10,2) AS hr_per_game
+FROM batting AS b
+WHERE CAST(LEFT(CAST(yearid AS varchar), 3) AS int) >= 192
+GROUP BY decade
+ORDER BY decade
+
+--The strikeouts have gone up since the 1920's peaking around 16.2 in the 1960's a game. homeruns have always been below two decimal places per game.
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 	
