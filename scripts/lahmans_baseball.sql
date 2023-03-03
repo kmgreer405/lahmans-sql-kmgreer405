@@ -30,10 +30,26 @@ LIMIT 1;
 --Eddie Gaedel is the shortest player at 43 inches tall. He played in 1 career game for the St. Louis Browns. 
 
 -- 3. Find all players in the database who played at Vanderbilt University. Create a list showing each player’s first and last names as well as the total salary they earned in the major leagues. Sort this list in descending order by the total salary earned. Which Vanderbilt player earned the most money in the majors?
-	
+SELECT namefirst,
+namelast,
+SUM(salary) AS total_salary
+FROM people
+INNER JOIN salaries
+USING(playerid)
+WHERE playerid IN
+	(SELECT DISTINCT playerid
+	FROM collegeplaying
+	WHERE schoolid = 'vandy')
+GROUP BY namefirst, namelast
+ORDER BY total_salary DESC
+
+--David Price has made the most at $81,851,296
 
 -- 4. Using the fielding table, group players into three groups based on their position: label players with position OF as "Outfield", those with position "SS", "1B", "2B", and "3B" as "Infield", and those with position "P" or "C" as "Battery". Determine the number of putouts made by each of these three groups in 2016.
-   
+
+
+
+
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
    
 
