@@ -90,24 +90,63 @@ ORDER BY sb_perc DESC
 --Chris Owings has the highest stolen base attempt percentage at 91%
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
-WITH my_cte AS 
-(SELECT yearid,
-MAX(w) AS highest_win
+
+--Finds the pecent of teams with the most wins that also won the world series.
+WITH my_cte AS ( 
+SELECT yearid,
+MAX(w) As max
 FROM teams
 WHERE yearid BETWEEN 1970 and 2016
 GROUP BY yearid
-ORDER BY yearid)
+ORDER BY yearid
+)
+SELECT ROUND((COUNT(wswin)/53 :: numeric) * 100,0) AS perc_of_top_win_winning
+FROM (
 SELECT m.yearid,
 teamid,
-highest_win,
-wswin
+wswin,
+max
 FROM teams AS t
 INNER JOIN my_cte AS m
 ON t.yearid = m.yearid
+WHERE w = max
+ORDER BY max DESC
+) AS subquery
+WHERE wswin = 'Y'
 
 
-SELECT *
+--Finds the team with the lowest wins and a world sereis win
+SELECT teamid,
+yearid,
+MIN(w)
 FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+AND wswin = 'Y'
+GROUP BY teamid,
+yearid
+ORDER BY MIN(w)
+
+
+--Finds the team with the most wins and no world sereis.
+WITH my_cte AS ( 
+SELECT yearid,
+MAX(w) As max
+FROM teams
+WHERE yearid BETWEEN 1970 and 2016
+GROUP BY yearid
+ORDER BY yearid
+	)
+SELECT m.yearid,
+teamid,
+wswin,
+max
+FROM teams AS t
+INNER JOIN my_cte AS m
+ON t.yearid = m.yearid
+WHERE w = max
+ORDER BY max DESC
+
+-- LAN in 1981 had the lowest total wins while winning the world series at 63. SEA is the team that has won the most games and not won the world series at 116 in 2001. 23% of the time between 1970 and 2016 the team with he most wins also wins the world sereis.
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
