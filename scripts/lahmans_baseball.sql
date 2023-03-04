@@ -57,42 +57,58 @@ GROUP BY position_group
 
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
 
-SELECT LEFT(CAST(p.yearid AS varchar), 3) AS decade,
-ROUND(AVG(p.so/p.g)*10,2) AS so_per_game
-FROM pitching AS p
-WHERE CAST(LEFT(CAST(p.yearid AS varchar), 3) AS int) >= 192
+SELECT CASE WHEN yearid BETWEEN 1920 AND 1929 THEN '1920s'
+	WHEN yearid BETWEEN 1930 AND 1939 THEN '1930s'
+	WHEN yearid BETWEEN 1940 AND 1949 THEN '1940s'
+	WHEN yearid BETWEEN 1950 AND 1959 THEN '1950s'
+	WHEN yearid BETWEEN 1960 AND 1969 THEN '1960s'
+	WHEN yearid BETWEEN 1970 AND 1979 THEN '1970s'
+	WHEN yearid BETWEEN 1980 AND 1989 THEN '1980s'
+	WHEN yearid BETWEEN 1990 AND 1999 THEN '1990s'
+	WHEN yearid BETWEEN 2000 AND 2009 THEN '2000s'
+	ELSE '2010s' END AS decade,
+ROUND(SUM(so) :: numeric/ SUM(g/2) :: numeric, 2) AS avg_strikeouts,
+ROUND(SUM(hr) :: numeric/ SUM(g/2) :: numeric, 2) AS avg_homeruns
+FROM teams
 GROUP BY decade
 ORDER BY decade
 
-SELECT LEFT(CAST(yearid AS varchar), 3) AS decade,
-ROUND(AVG(hr/g)*10,2) AS hr_per_game
-FROM batting AS b
-WHERE CAST(LEFT(CAST(yearid AS varchar), 3) AS int) >= 192
-GROUP BY decade
-ORDER BY decade
-
---The strikeouts have gone up since the 1920's peaking around 16.2 in the 1960's a game. homeruns have always been below two decimal places per game.
+--They have risen over time for both categories.
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 
-SELECT DISTINCT playerid AS player,
-sb 
-FROM batting
+SELECT namefirst,
+namelast,
+ROUND(sb :: numeric/(sb + cs)*100,0) :: numeric AS sb_perc 
+FROM batting AS b
+INNER JOIN people AS p
+ON b.playerid = p.playerid
 WHERE yearid = 2016
 AND sb + cs >= 20
+ORDER BY sb_perc DESC
 
-
---I don't know why this isn't working
+--Chris Owings has the highest stolen base attempt percentage at 91%
 
 -- 7.  From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? What is the smallest number of wins for a team that did win the world series? Doing this will probably result in an unusually small number of wins for a world series champion – determine why this is the case. Then redo your query, excluding the problem year. How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? What percentage of the time?
-SELECT teamid,
-w
+WITH my_cte AS 
+(SELECT yearid,
+MAX(w) AS highest_win
 FROM teams
 WHERE yearid BETWEEN 1970 and 2016
-ORDER BY w DESC
+GROUP BY yearid
+ORDER BY yearid)
+SELECT m.yearid,
+teamid,
+highest_win,
+wswin
+FROM teams AS t
+INNER JOIN my_cte AS m
+ON t.yearid = m.yearid
+
 
 SELECT *
-FROM seriespost
+FROM teams
+
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
 
