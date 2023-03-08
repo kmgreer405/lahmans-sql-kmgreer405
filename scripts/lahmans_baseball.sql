@@ -149,8 +149,114 @@ ORDER BY max DESC
 -- LAN in 1981 had the lowest total wins while winning the world series at 63. SEA is the team that has won the most games and not won the world series at 116 in 2001. 23% of the time between 1970 and 2016 the team with he most wins also wins the world sereis.
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
+WITH my_cte AS (
+SELECT team,
+	park_name,
+h.attendance / games AS avg_attendance
+FROM homegames AS h
+INNER JOIN parks AS p
+ON h.park = p.park
+WHERE year = 2016
+AND games > 10
+ORDER BY avg_attendance DESC
+LIMIT 5
+)
+SELECT name,
+park_name,
+avg_attendance
+FROM teams AS t
+INNER JOIN my_cte AS m
+ON t.teamid = m.team
+WHERE yearid = 2016
+ORDER BY avg_attendance DESC
+
+WITH my_cte AS (
+SELECT team,
+	park_name,
+h.attendance / games AS avg_attendance
+FROM homegames AS h
+INNER JOIN parks AS p
+ON h.park = p.park
+WHERE year = 2016
+AND games > 10
+ORDER BY avg_attendance
+LIMIT 5
+)
+SELECT name,
+park_name,
+avg_attendance
+FROM teams AS t
+INNER JOIN my_cte AS m
+ON t.teamid = m.team
+WHERE yearid = 2016
+ORDER BY avg_attendance
 
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
+
+
+
+
+
+-- Bonus
+-- Lag / Lead
+-- Lag returns the previous year's hr for that player
+-- Lead returns the next year's hr for that player
+SELECT yearid,
+	   playerid,
+	   hr,
+	   LAG(hr) OVER (PARTITION BY playerid ORDER BY yearid) AS prev_yr_hr,
+	   LEAD(hr) OVER (PARTITION BY playerid ORDER BY yearid) AS next_yr_hr
+FROM batting
+ORDER BY playerid, yearid
+
+
+-- Sliding Windows
+-- Same concept as with lag and lead, except new keywords allow you to do aggregations on a certain number of rows before or after
+-- SUM OVER PRECEDING allows us to get the sum of the two years earlier than that row for that player
+-- SUM OVER FOLLOWING allows us to get the sum of the two years after that row for that player
+SELECT yearid,
+	   playerid,
+	   hr,
+	   SUM(hr) OVER (PARTITION BY playerid 
+					 ORDER BY yearid
+					ROWS BETWEEN 2 PRECEDING AND 1 PRECEDING) AS prev_2yr_hr,
+	   SUM(hr) OVER (PARTITION BY playerid 
+					 ORDER BY yearid
+					 ROWS BETWEEN 1 FOLLOWING AND 2 FOLLOWING) AS next_2yr_hr
+FROM batting
+ORDER BY playerid, yearid
+
+
+-- GROUP BY ROLLUP
+-- Same as a GROUP BY, except each group is followed by a total for that group and a grand total for multiple groups
+-- The rollup means we will get a total for the sub group - so we have totals per year per team, the rollup adds the total as if we had also grouped by just year, followed by the total for the entire table
+
+SELECT yearid,
+	   teamid,
+	   SUM(hr)
+FROM batting
+GROUP BY ROLLUP(yearid, teamid)
+ORDER BY yearid, teamid
+
+
+-- GROUP BY CUBE
+-- Similar to ROLLUP, except instead of just giving us the totals for the larger group (which it still does at the end of each year as before), it also gives us the totals of the groups if they had been grouped the other way
+-- So in this example, we get the totals by year as well as the totals by team
+SELECT yearid,
+	   teamid,
+	   SUM(hr)
+FROM batting
+GROUP BY CUBE(yearid, teamid)
+ORDER BY yearid, teamid
+
+
+-- To make this easier to read, use coalesce to change the nulls to accurate labels
+SELECT COALESCE(yearid :: text, 'All Years'),
+	   COALESCE(teamid, 'All Teams'),
+	   SUM(hr)
+FROM batting
+GROUP BY CUBE(yearid, teamid)
+ORDER BY yearid, teamid
