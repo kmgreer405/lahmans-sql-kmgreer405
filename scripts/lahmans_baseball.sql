@@ -170,6 +170,7 @@ ON t.teamid = m.team
 WHERE yearid = 2016
 ORDER BY avg_attendance DESC
 
+
 WITH my_cte AS (
 SELECT team,
 	park_name,
@@ -193,6 +194,33 @@ ORDER BY avg_attendance
 
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
+WITH my_cte AS (
+SELECT playerid,
+awardid,
+yearid,
+lgid 	
+FROM awardsmanagers
+WHERE lgid = 'NL' 
+OR lgid = 'AL'
+)
+SELECT playerid,
+awardid,
+yearid,
+lgid 
+FROM my_cte
+WHERE playerid IN (
+	SELECT playerid
+	FROM my_cte
+	WHERE awardid = 'TSN Manager of the Year'
+	GROUP BY playerid
+	HAVING COUNT(*) > 1
+	)
+AND awardid = 'TSN Manager of the Year'
+ORDER BY playerid
+
+
+
+
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
