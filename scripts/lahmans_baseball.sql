@@ -194,28 +194,21 @@ ORDER BY avg_attendance
 
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
-WITH my_cte AS (
-SELECT playerid,
-awardid,
-yearid,
-lgid 	
-FROM awardsmanagers
-WHERE lgid = 'NL' 
-OR lgid = 'AL'
-)
+
 SELECT playerid,
 awardid,
 yearid,
 lgid 
-FROM my_cte
+FROM awardsmanagers
 WHERE playerid IN (
 	SELECT playerid
-	FROM my_cte
+	FROM awardsmanagers
 	WHERE awardid = 'TSN Manager of the Year'
 	GROUP BY playerid
 	HAVING COUNT(*) > 1
 	)
 AND awardid = 'TSN Manager of the Year'
+AND lgid <> 'ML'
 ORDER BY playerid
 
 
