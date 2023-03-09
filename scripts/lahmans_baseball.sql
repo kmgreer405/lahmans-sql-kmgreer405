@@ -195,6 +195,7 @@ ORDER BY avg_attendance
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
 
+--not the answer. Just liked way it worked.
 SELECT playerid,
 awardid,
 yearid,
@@ -214,6 +215,33 @@ ORDER BY playerid
 
 
 
+SELECT namefirst,
+namelast,
+name
+FROM awardsmanagers AS a
+INNER JOIN people AS p
+ON a.playerid = p.playerid
+INNER JOIN managers AS m
+ON a.playerid = m.playerid
+AND a.yearid = m.yearid
+INNER JOIN teams AS t
+ON m.teamid = t.teamid
+AND m.yearid = t.yearid
+WHERE a.playerid IN (
+	SELECT playerid 
+	FROM awardsmanagers
+	WHERE playerid IN (
+		SELECT playerid
+		FROM awardsmanagers
+		WHERE lgid = 'NL'
+		AND awardid = 'TSN Manager of the Year'
+		)
+	AND lgid = 'AL'
+	AND awardid = 'TSN Manager of the Year'
+	)
+AND awardid = 'TSN Manager of the Year'
+ORDER BY namefirst
+-- Jim Leyland and Davey Johnson are the two managers to win the TSN manager of the year award in both the NL and AL.
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
 
