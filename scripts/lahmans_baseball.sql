@@ -216,8 +216,8 @@ ORDER BY playerid
 
 
 SELECT namefirst,
-namelast,
-name
+	namelast,
+	name
 FROM awardsmanagers AS a
 INNER JOIN people AS p
 ON a.playerid = p.playerid
@@ -241,13 +241,29 @@ WHERE a.playerid IN (
 	)
 AND awardid = 'TSN Manager of the Year'
 ORDER BY namefirst
+
 -- Jim Leyland and Davey Johnson are the two managers to win the TSN manager of the year award in both the NL and AL.
 
 -- 10. Find all players who hit their career highest number of home runs in 2016. Consider only players who have played in the league for at least 10 years, and who hit at least one home run in 2016. Report the players' first and last names and the number of home runs they hit in 2016.
-
-
-
-
+WITH my_cte AS (
+SELECT playerid,
+MAX(hr) AS max_hr
+FROM batting
+GROUP BY playerid
+HAVING MAX(hr) >= 1
+)
+SELECT namefirst,
+namelast,
+max_hr
+FROM batting AS b
+RIGHT JOIN my_cte AS m
+ON b.playerid = m.playerid
+AND b.hr = m.max_hr
+INNER JOIN people AS p
+ON b.playerid = p.playerid
+WHERE b.yearid = 2016
+AND p.debut <= '2006-12-31'
+ORDER BY max_hr DESC
 
 -- Bonus
 -- Lag / Lead
