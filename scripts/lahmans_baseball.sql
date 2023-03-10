@@ -1,30 +1,21 @@
 -- 1. What range of years for baseball games played does the provided database cover?
-SELECT MAX(year) - MIN(year)
+SELECT MAX(year) - MIN(year) AS range_of_years
 FROM homegames;
 
 --145 years. The earliest date being 1871 and the latest date being 2016
 
 -- 2. Find the name and height of the shortest player in the database. How many games did he play in? What is the name of the team for which he played?
-SELECT *
-FROM people
-ORDER BY height
-LIMIT 1;
-
-SELECT *
-FROM appearances
-INNER JOIN people
-USING(playerid)
-WHERE playerid = 'gaedeed01'
-
-SELECT teamid,
+SELECT namefirst,
+namelast,
+height,
+g_all,
 name
-FROM appearances
-INNER JOIN people
-USING(playerid)
-INNER JOIN teams
-USING(teamid)
-WHERE playerid = 'gaedeed01'
-AND teamid = 'SLA'
+FROM people AS p
+INNER JOIN appearances AS a
+ON p.playerid = a.playerid
+INNER JOIN teams AS t
+on a.teamid = t.teamid
+ORDER BY height
 LIMIT 1;
 
 --Eddie Gaedel is the shortest player at 43 inches tall. He played in 1 career game for the St. Louis Browns. 
@@ -54,9 +45,11 @@ SUM(po)
 FROM fielding
 WHERE yearid = 2016
 GROUP BY position_group
+ORDER BY SUM(po) DESC
 
 -- 5. Find the average number of strikeouts per game by decade since 1920. Round the numbers you report to 2 decimal places. Do the same for home runs per game. Do you see any trends?
 
+--Have to divide games by 2 because they all play each other. 
 SELECT CASE WHEN yearid BETWEEN 1920 AND 1929 THEN '1920s'
 	WHEN yearid BETWEEN 1930 AND 1939 THEN '1930s'
 	WHEN yearid BETWEEN 1940 AND 1949 THEN '1940s'
@@ -73,7 +66,7 @@ FROM teams
 GROUP BY decade
 ORDER BY decade
 
---They have risen over time for both categories.
+--They have risen over time for both categories. outside of the 2010's but there is also four years less of data for that bracket.
 
 -- 6. Find the player who had the most success stealing bases in 2016, where __success__ is measured as the percentage of stolen base attempts which are successful. (A stolen base attempt results either in a stolen base or being caught stealing.) Consider only players who attempted _at least_ 20 stolen bases.
 
@@ -149,48 +142,36 @@ ORDER BY max DESC
 -- LAN in 1981 had the lowest total wins while winning the world series at 63. SEA is the team that has won the most games and not won the world series at 116 in 2001. 23% of the time between 1970 and 2016 the team with he most wins also wins the world sereis.
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
-WITH my_cte AS (
-SELECT team,
+
+SELECT name,
 	park_name,
 h.attendance / games AS avg_attendance
 FROM homegames AS h
 INNER JOIN parks AS p
 ON h.park = p.park
+INNER JOIN teams AS t
+ON h.team = t.teamid
+AND h.year = t.yearid
 WHERE year = 2016
 AND games > 10
 ORDER BY avg_attendance DESC
 LIMIT 5
-)
+
+
 SELECT name,
-park_name,
-avg_attendance
-FROM teams AS t
-INNER JOIN my_cte AS m
-ON t.teamid = m.team
-WHERE yearid = 2016
-ORDER BY avg_attendance DESC
-
-
-WITH my_cte AS (
-SELECT team,
 	park_name,
 h.attendance / games AS avg_attendance
 FROM homegames AS h
 INNER JOIN parks AS p
 ON h.park = p.park
+INNER JOIN teams AS t
+ON h.team = t.teamid
+AND h.year = t.yearid
 WHERE year = 2016
 AND games > 10
 ORDER BY avg_attendance
 LIMIT 5
-)
-SELECT name,
-park_name,
-avg_attendance
-FROM teams AS t
-INNER JOIN my_cte AS m
-ON t.teamid = m.team
-WHERE yearid = 2016
-ORDER BY avg_attendance
+
 
 
 -- 9. Which managers have won the TSN Manager of the Year award in both the National League (NL) and the American League (AL)? Give their full name and the teams that they were managing when they won the award.
@@ -262,7 +243,7 @@ AND b.hr = m.max_hr
 INNER JOIN people AS p
 ON b.playerid = p.playerid
 WHERE b.yearid = 2016
-AND p.debut <= '2006-12-31'
+AND p.debut <= '2006-01-01'
 ORDER BY max_hr DESC
 
 -- Bonus
@@ -325,3 +306,34 @@ SELECT COALESCE(yearid :: text, 'All Years'),
 FROM batting
 GROUP BY CUBE(yearid, teamid)
 ORDER BY yearid, teamid
+
+
+
+-- 1. What have our annual sales been over the past ten years?
+
+-- Line graph
+
+-- 2. How much did each of our top 5 selling toys bring in last quarter?
+
+-- Bar graph
+
+-- 3. What is the distribution of price over all the toys we sell?
+
+-- Histogram is best. Scatter could also work well for this example. Box and whisker plot also works for distribution.
+
+-- 4. Show the dollar number of sales from last year by state. Use color density to visually compare state sales to each other.
+
+-- choropleth map
+
+-- 5. Is there a correlation between toy price and toy weight?
+
+-- Scatter plot would work best for correlation especially between two or more things.
+
+-- 6. What have our quarterly sales been over the past four quarters, broken out by toy category?
+
+-- Clustered bar chart or stacked bar chart could also work here. 
+
+-- 7. How many units did each toy category sell in Tennessee, Wisconsin, Florida, and Vermont over the past five years?
+
+-- Pair plot. Basicallly four small charts of each state over one big busy chart showing everyhting.
+
