@@ -1,8 +1,9 @@
 -- 1. What range of years for baseball games played does the provided database cover?
-SELECT MAX(year) - MIN(year) AS range_of_years
+
+SELECT COUNT(DISTINCT year)
 FROM homegames;
 
---145 years. The earliest date being 1871 and the latest date being 2016
+--146 years.
 
 -- 2. Find the name and height of the shortest player in the database. How many games did he play in? What is the name of the team for which he played?
 SELECT namefirst,
@@ -63,6 +64,7 @@ SELECT CASE WHEN yearid BETWEEN 1920 AND 1929 THEN '1920s'
 ROUND(SUM(so) :: numeric/ SUM(g/2) :: numeric, 2) AS avg_strikeouts,
 ROUND(SUM(hr) :: numeric/ SUM(g/2) :: numeric, 2) AS avg_homeruns
 FROM teams
+WHERE yearid >= 1920
 GROUP BY decade
 ORDER BY decade
 
@@ -79,6 +81,7 @@ ON b.playerid = p.playerid
 WHERE yearid = 2016
 AND sb + cs >= 20
 ORDER BY sb_perc DESC
+
 
 --Chris Owings has the highest stolen base attempt percentage at 91%
 
@@ -143,6 +146,7 @@ ORDER BY max DESC
 
 -- 8. Using the attendance figures from the homegames table, find the teams and parks which had the top 5 average attendance per game in 2016 (where average attendance is defined as total attendance divided by number of games). Only consider parks where there were at least 10 games played. Report the park name, team name, and average attendance. Repeat for the lowest 5 average attendance.
 
+--Top 5
 SELECT name,
 	park_name,
 h.attendance / games AS avg_attendance
@@ -157,7 +161,7 @@ AND games > 10
 ORDER BY avg_attendance DESC
 LIMIT 5
 
-
+--Bottom 5
 SELECT name,
 	park_name,
 h.attendance / games AS avg_attendance
@@ -243,8 +247,41 @@ AND b.hr = m.max_hr
 INNER JOIN people AS p
 ON b.playerid = p.playerid
 WHERE b.yearid = 2016
-AND p.debut <= '2006-01-01'
+AND p.debut <= '2006-12-31'
 ORDER BY max_hr DESC
+
+
+WITH hr_sixteen AS
+(SELECT playerid, yearid, SUM(hr) as player_hr_sixteen
+FROM batting
+WHERE yearid = 2016
+GROUP by playerid, yearid
+ORDER BY player_hr_sixteen DESC),
+
+yearly_hr AS
+(SELECT playerid, yearid, SUM(hr) AS hr_yearly,
+ 	MAX(SUM(hr)) OVER(PARTITION BY playerid) AS best_year_hrs
+FROM batting
+GROUP BY playerid, yearid),
+
+yp AS
+(SELECT COUNT(DISTINCT yearid) AS years_played, playerid
+FROM batting
+GROUP BY playerid)
+
+SELECT playerid, namefirst, namelast, hr_yearly AS total_hr_2016, years_played
+FROM yearly_hr
+INNER JOIN hr_sixteen
+USING(playerid)
+INNER JOIN yp
+USING(playerid)
+INNER JOIN people
+USING(playerid)
+WHERE best_year_hrs = player_hr_sixteen
+	AND hr_yearly > 0
+	AND yearly_hr.yearid = 2016
+	AND years_played >= 10
+ORDER BY total_hr_2016 DESC
 
 -- Bonus
 -- Lag / Lead
@@ -308,32 +345,4 @@ GROUP BY CUBE(yearid, teamid)
 ORDER BY yearid, teamid
 
 
-
--- 1. What have our annual sales been over the past ten years?
-
--- Line graph
-
--- 2. How much did each of our top 5 selling toys bring in last quarter?
-
--- Bar graph
-
--- 3. What is the distribution of price over all the toys we sell?
-
--- Histogram is best. Scatter could also work well for this example. Box and whisker plot also works for distribution.
-
--- 4. Show the dollar number of sales from last year by state. Use color density to visually compare state sales to each other.
-
--- choropleth map
-
--- 5. Is there a correlation between toy price and toy weight?
-
--- Scatter plot would work best for correlation especially between two or more things.
-
--- 6. What have our quarterly sales been over the past four quarters, broken out by toy category?
-
--- Clustered bar chart or stacked bar chart could also work here. 
-
--- 7. How many units did each toy category sell in Tennessee, Wisconsin, Florida, and Vermont over the past five years?
-
--- Pair plot. Basicallly four small charts of each state over one big busy chart showing everyhting.
 
